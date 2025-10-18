@@ -8,3 +8,5 @@ Experimentation for an AI agentic coding course. Tone Druid is an AI-powered ass
 - [Tech Stack](agent-os/product/tech-stack.md)
 - [Product Overview](Product%20Overview.md)
 
+## Development Notes
+- Run `dotnet build ToneDruid.sln` and `dotnet test ToneDruid.sln` when working with multiple projects; the solution keeps editor tooling and CLI commands aligned across the repo.

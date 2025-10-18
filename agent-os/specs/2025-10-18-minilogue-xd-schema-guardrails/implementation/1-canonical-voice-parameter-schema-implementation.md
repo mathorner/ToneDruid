@@ -10,14 +10,14 @@
 Author the foundational Minilogue XD schema artifact, sourcing authoritative parameter ranges and enums from the owner's manual, and validate the artifact with focused structural tests.
 
 ## Implementation Summary
-Created a versioned JSON schema covering master controls, oscillators, filter, envelopes, LFO, effects, and program edit parameters, including manual references and modulation source mappings. Added structured metadata describing provenance and consulted manual pages. Introduced focused .NET xUnit tests so the canonical schema can be validated within the primary tech stack, ensuring future consumers detect regressions quickly.
+Created a versioned JSON schema covering master controls, oscillators, filter, envelopes, LFO, effects, and program edit parameters, including manual references and modulation source mappings. Added structured metadata describing provenance, CV voltage ranges, and consulted manual pages. Expanded the program-edit section with officially documented controls (Multi Octave/Routing, EG & Amp velocity sensitivity, EG Legato, Portamento Mode/BPM sync, Program Level). Introduced focused .NET xUnit tests so the canonical schema can be validated within the primary tech stack, ensuring future consumers detect regressions quickly.
 
 ## Files Changed/Created
 
 ### New Files
-- `schemas/minilogue-xd/voice-parameters.json` - Canonical schema artifact with parameter definitions and metadata.
+- `schemas/minilogue-xd/voice-parameters.json` - Canonical schema artifact with parameter definitions, CV I/O metadata, and manual references.
 - `tests/SchemaValidation.Tests/SchemaValidation.Tests.csproj` - xUnit test project targeting .NET 9.
-- `tests/SchemaValidation.Tests/UnitTest1.cs` - Focused schema validation tests.
+- `tests/SchemaValidation.Tests/VoiceParameterSchemaTests.cs` - Focused schema validation tests.
 - `agent-os/specs/2025-10-18-minilogue-xd-schema-guardrails/implementation/1-canonical-voice-parameter-schema-implementation.md` - Implementation log for this task.
 
 ### Modified Files
@@ -51,7 +51,7 @@ _No new runtime dependencies. `pdfminer.six` was installed locally to parse the 
 ## Testing
 
 ### Test Files Created/Updated
-- `tests/SchemaValidation.Tests/UnitTest1.cs` - Validates metadata, required parameter groups, and enum definitions.
+- `tests/SchemaValidation.Tests/VoiceParameterSchemaTests.cs` - Validates metadata, required parameter groups, and enum definitions.
 
 ### Test Coverage
 - Unit tests: ✅ Complete (structural assertions for schema integrity)
@@ -59,7 +59,7 @@ _No new runtime dependencies. `pdfminer.six` was installed locally to parse the 
 - Edge cases covered: Ensured enumerations are non-empty and parameter groups include required sections.
 
 ### Manual Testing Performed
-- Executed `dotnet test tests/SchemaValidation.Tests/SchemaValidation.Tests.csproj` to verify the schema checks pass.
+- Executed `dotnet test tests/SchemaValidation.Tests/SchemaValidation.Tests.csproj` to verify the schema checks pass after schema updates.
 
 ## User Standards & Preferences Compliance
 
