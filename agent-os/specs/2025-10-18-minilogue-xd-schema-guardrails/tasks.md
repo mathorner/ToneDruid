@@ -12,12 +12,12 @@ Assigned roles: database-engineer, api-engineer, testing-engineer
 **Assigned implementer:** database-engineer  
 **Dependencies:** None
 
-- [ ] 1.0 Author schema groundwork
-  - [ ] 1.1 Write 2-4 focused unit tests that load the schema artifact (JSON/YAML) and assert required top-level sections (oscillators, envelopes, LFOs, motion lanes, effects) exist and contain expected keys.
-  - [ ] 1.2 Extract authoritative parameter details from the Minilogue XD manual and MIDI implementation notes.
-  - [ ] 1.3 Create `schemas/minilogue-xd/voice-parameters.json` (or equivalent) capturing every voice parameter (name, type, allowed range/enum, modulation sources, documentation reference).
-  - [ ] 1.4 Add metadata fields (e.g., schema version, checksum placeholder) to support future auditing.
-  - [ ] 1.5 Ensure schema artifact passes JSON validation/linting and the tests from 1.1.
+- [x] 1.0 Author schema groundwork
+  - [x] 1.1 Write 2-4 focused unit tests that load the schema artifact (JSON/YAML) and assert required top-level sections (oscillators, envelopes, LFOs, motion lanes, effects) exist and contain expected keys.
+  - [x] 1.2 Extract authoritative parameter details from the Minilogue XD manual and MIDI implementation notes.
+  - [x] 1.3 Create `schemas/minilogue-xd/voice-parameters.json` (or equivalent) capturing every voice parameter (name, type, allowed range/enum, modulation sources, documentation reference).
+  - [x] 1.4 Add metadata fields (e.g., schema version, checksum placeholder) to support future auditing.
+  - [x] 1.5 Ensure schema artifact passes JSON validation/linting and the tests from 1.1.
 
 **Acceptance Criteria:**
 - Schema artifact lives in source control with manual-aligned parameter coverage, excluding global system settings.
