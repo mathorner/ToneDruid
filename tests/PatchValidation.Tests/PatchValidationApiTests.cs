@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -89,6 +90,82 @@ public class PatchValidationApiTests : IClassFixture<WebApplicationFactory<Progr
         Assert.NotNull(payload.Errors);
         var error = Assert.Single(payload.Errors!, e => e.Field == "oscillators");
         Assert.Contains("missing", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NonObjectPayload_ReturnsPatchTypeError()
+    {
+        var content = new StringContent("[]", Encoding.UTF8, "application/json");
+
+        var response = await _client.PostAsync("/api/v1/minilogue-xd/patches/validate", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationResponse>(SerializerOptions);
+        Assert.NotNull(payload);
+        Assert.False(payload!.Valid);
+        var error = Assert.Single(payload.Errors!);
+        Assert.Equal("patch", error.Field);
+        Assert.Contains("JSON object", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task UnknownParameter_ReturnsFieldSpecificError()
+    {
+        var patch = PatchFixtures.CreateValidPatch();
+        var master = PatchFixtures.GetSection(patch, "master");
+        master["master.unsupported"] = 42;
+
+        var response = await _client.PostAsJsonAsync("/api/v1/minilogue-xd/patches/validate", patch);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationResponse>(SerializerOptions);
+        Assert.NotNull(payload);
+        Assert.False(payload!.Valid);
+        Assert.Contains(payload.Errors!, e => e.Field == "master.unsupported");
+        var error = Assert.Single(payload.Errors!, e => e.Field == "master.unsupported");
+        Assert.Contains("Unknown parameter", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task MultipleViolations_ReturnsAllErrors()
+    {
+        var patch = PatchFixtures.CreateValidPatch();
+        patch.Remove("effects");
+        var master = PatchFixtures.GetSection(patch, "master");
+        master["master.tempo"] = 400;
+
+        var response = await _client.PostAsJsonAsync("/api/v1/minilogue-xd/patches/validate", patch);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationResponse>(SerializerOptions);
+        Assert.NotNull(payload);
+        Assert.False(payload!.Valid);
+        Assert.NotNull(payload.Errors);
+        Assert.Equal(2, payload.Errors!.Count);
+        Assert.Contains(payload.Errors!, e => e.Field == "effects");
+        Assert.Contains(payload.Errors!, e => e.Field == "master.tempo");
+    }
+
+    [Fact]
+    public async Task InvalidListEntry_ReturnsGuidance()
+    {
+        var patch = PatchFixtures.CreateValidPatch();
+        var programEdit = PatchFixtures.GetSection(patch, "program_edit");
+        programEdit["joystick.assignable_targets"] = new List<string> { "cutoff", "invalid-destination" };
+
+        var response = await _client.PostAsJsonAsync("/api/v1/minilogue-xd/patches/validate", patch);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationResponse>(SerializerOptions);
+        Assert.NotNull(payload);
+        Assert.False(payload!.Valid);
+        var error = Assert.Single(payload.Errors!, e => e.Field == "joystick.assignable_targets");
+        Assert.Contains("must be one of", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("invalid-destination", error.Value);
     }
 
     private sealed record ValidationResponse(bool Valid, List<ValidationErrorResponse>? Errors);
