@@ -30,13 +30,13 @@ Assigned roles: database-engineer, api-engineer, testing-engineer
 **Assigned implementer:** api-engineer  
 **Dependencies:** Task Group 1
 
-- [ ] 2.0 Implement validator service
-  - [ ] 2.1 Write 3-6 focused tests covering: valid patch returns `valid: true`; invalid enum returns specific error; out-of-range numeric triggers error; missing section reports field-specific guidance.
-  - [ ] 2.2 Create a schema loading utility (e.g., `SchemaProvider`) to read the artifact and expose lookup helpers with caching.
-  - [ ] 2.3 Implement validation logic (`MinilogueXdPatchValidator`) leveraging the schema for type/range/enum checks and assembling structured error responses.
-  - [ ] 2.4 Add `POST /api/v1/minilogue-xd/patches/validate` endpoint that invokes the validator and returns `200` with `{ "valid": true }` or `400` with `{ "valid": false, "errors": [...] }`.
-  - [ ] 2.5 Document the endpoint contract (input shape, error format, versioning) in API docs or inline README.
-  - [ ] 2.6 Run only the tests from 2.1 to confirm endpoint and validator behavior.
+- [x] 2.0 Implement validator service
+  - [x] 2.1 Write 3-6 focused tests covering: valid patch returns `valid: true`; invalid enum returns specific error; out-of-range numeric triggers error; missing section reports field-specific guidance.
+  - [x] 2.2 Create a schema loading utility (e.g., `SchemaProvider`) to read the artifact and expose lookup helpers with caching.
+  - [x] 2.3 Implement validation logic (`MinilogueXdPatchValidator`) leveraging the schema for type/range/enum checks and assembling structured error responses.
+  - [x] 2.4 Add `POST /api/v1/minilogue-xd/patches/validate` endpoint that invokes the validator and returns `200` with `{ "valid": true }` or `400` with `{ "valid": false, "errors": [...] }`.
+  - [x] 2.5 Document the endpoint contract (input shape, error format, versioning) in API docs or inline README.
+  - [x] 2.6 Run only the tests from 2.1 to confirm endpoint and validator behavior.
 
 **Acceptance Criteria:**
 - Endpoint responds per specification with actionable error payloads.
