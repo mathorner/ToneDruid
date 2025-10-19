@@ -50,11 +50,11 @@ Assigned roles: database-engineer, api-engineer, testing-engineer
 **Assigned implementer:** testing-engineer  
 **Dependencies:** Task Groups 1 & 2
 
-- [ ] 3.0 Consolidate validation test coverage
-  - [ ] 3.1 Review tests written in 1.1 and 2.1, noting covered behaviors.
-  - [ ] 3.2 Identify any remaining critical gaps (e.g., combined error reporting, malformed payload handling) specific to this feature.
-  - [ ] 3.3 Add up to 4 supplemental integration tests targeting the highest-risk gaps only.
-  - [ ] 3.4 Run feature-specific test suite (tests from 1.1, 2.1, and 3.3) and record results.
+- [x] 3.0 Consolidate validation test coverage
+  - [x] 3.1 Review tests written in 1.1 and 2.1, noting covered behaviors.
+  - [x] 3.2 Identify any remaining critical gaps (e.g., combined error reporting, malformed payload handling) specific to this feature.
+  - [x] 3.3 Add up to 4 supplemental integration tests targeting the highest-risk gaps only.
+  - [x] 3.4 Run feature-specific test suite (tests from 1.1, 2.1, and 3.3) and record results.
 
 **Acceptance Criteria:**
 - No more than 4 additional tests added; total feature tests remain within guidelines.
