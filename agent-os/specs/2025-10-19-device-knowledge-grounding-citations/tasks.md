@@ -12,13 +12,13 @@ Assigned roles: database-engineer, api-engineer, ui-designer, testing-engineer
 **Assigned implementer:** database-engineer  
 **Dependencies:** None
 
-- [ ] 1.0 Define persistence for documents, retrieval requests, and feedback
-  - [ ] 1.1 Write 4 focused tests covering required document metadata, retrieval request logging, and feedback rating validation
-  - [ ] 1.2 Create migrations for `knowledge_documents` (source, blob path, checksum, page count), `retrieval_requests` (query text, top_document_id, created_at), and `grounding_feedback` (retrieval_request_id, optional suggestion_id, rating enum, note, timestamps)
-  - [ ] 1.3 Implement corresponding models with constraints (presence checks, enum validation, foreign keys with cascading behavior)
-  - [ ] 1.4 Add indexes on `knowledge_documents.source`, `retrieval_requests.created_at`, and `grounding_feedback.retrieval_request_id`
-  - [ ] 1.5 Seed fixtures or factory helpers that create sample document and retrieval records for manual testing
-  - [ ] 1.6 Run only the tests from 1.1 to validate schema behavior
+- [x] 1.0 Define persistence for documents, retrieval requests, and feedback
+  - [x] 1.1 Write 4 focused tests covering required document metadata, retrieval request logging, and feedback rating validation
+- [x] 1.2 Create migrations for `knowledge_documents` (source, blob path, checksum, page count), `retrieval_requests` (query text, best_match_document_id, created_at), and `feedback` (retrieval_request_id, optional suggestion_id, rating enum, note, timestamps)
+- [x] 1.3 Implement corresponding models with constraints (presence checks, enum validation, foreign keys with cascading behavior)
+- [x] 1.4 Add indexes on `knowledge_documents.source`, `retrieval_requests.created_at`, and `feedback.retrieval_request_id`
+  - [x] 1.5 Seed fixtures or factory helpers that create sample document and retrieval records for manual testing
+  - [x] 1.6 Run only the tests from 1.1 to validate schema behavior
 
 **Acceptance Criteria:**
 - Migrations apply and roll back cleanly
