@@ -12,4 +12,11 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.20.0" />
+    <PackageReference Include="Dapper" Version="2.1.24" />
+    <PackageReference Include="Npgsql" Version="8.0.4" />
+    <PackageReference Include="UglyToad.PdfPig" Version="0.1.9-alpha001-patch1" />
+  </ItemGroup>
+
 </Project>

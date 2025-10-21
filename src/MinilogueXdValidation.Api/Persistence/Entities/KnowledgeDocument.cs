@@ -58,6 +58,30 @@ public sealed class KnowledgeDocument
             utcNow);
     }
 
+    public static KnowledgeDocument FromPersistence(
+        Guid id,
+        string sourceName,
+        string blobPath,
+        string checksum,
+        int pageCount,
+        DateTime createdAtUtc,
+        DateTime updatedAtUtc)
+    {
+        if (pageCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageCount), pageCount, "Page count must be greater than zero.");
+        }
+
+        return new KnowledgeDocument(
+            id,
+            sourceName,
+            blobPath,
+            checksum,
+            pageCount,
+            EnsureUtc(createdAtUtc),
+            EnsureUtc(updatedAtUtc));
+    }
+
     public void Touch(DateTime? timestampUtc = null)
     {
         UpdatedAt = EnsureUtc(timestampUtc ?? DateTime.UtcNow);

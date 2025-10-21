@@ -31,13 +31,13 @@ Assigned roles: database-engineer, api-engineer, ui-designer, testing-engineer
 **Assigned implementer:** api-engineer  
 **Dependencies:** Task Group 1
 
-- [ ] 2.0 Implement ingestion pipeline
-  - [ ] 2.1 Write 3-5 targeted tests covering ingestion happy path, duplicate upload detection, and invalid file handling
-  - [ ] 2.2 Implement service/worker to upload PDFs to Azure Blob Storage (or emulator) and register metadata in `knowledge_documents`
-  - [ ] 2.3 Parse PDFs into page-level chunks or embeddings and persist index artifacts needed by the retrieval helper
-  - [ ] 2.4 Expose minimal admin endpoint/CLI hook (e.g., `POST /api/knowledge/ingest`) for loading the two seed documents with validation and clear error responses
-  - [ ] 2.5 Log ingestion progress and failures following existing error-handling standards
-  - [ ] 2.6 Run only the tests from 2.1 to confirm ingestion behavior
+- [x] 2.0 Implement ingestion pipeline
+  - [x] 2.1 Write 3-5 targeted tests covering ingestion happy path, duplicate upload detection, and invalid file handling
+  - [x] 2.2 Implement service/worker to upload PDFs to Azure Blob Storage (or emulator) and register metadata in `knowledge_documents`
+  - [x] 2.3 Parse PDFs into page-level chunks or embeddings and persist index artifacts needed by the retrieval helper
+  - [x] 2.4 Expose minimal admin endpoint/CLI hook (e.g., `POST /api/knowledge/ingest`) for loading the two seed documents with validation and clear error responses
+  - [x] 2.5 Log ingestion progress and failures following existing error-handling standards
+  - [x] 2.6 Run only the tests from 2.1 to confirm ingestion behavior
 
 **Acceptance Criteria:**
 - Uploads store blobs and metadata correctly
