@@ -25,7 +25,7 @@
   - Initialize Application Insights JS SDK once (connection string via `VITE_APPINSIGHTS_CONNECTION_STRING`).
   - Track custom events: `patch_request_started`, `patch_request_succeeded`, `patch_request_failed` with relevant IDs for correlation.
 - **Configuration**
-  - `.env`: `VITE_API_BASE_URL`, `VITE_APPINSIGHTS_CONNECTION_STRING`.
+  - `.env`: `VITE_API_BASE_URL` (defaults to `https://localhost:7241` in dev), `VITE_APPINSIGHTS_CONNECTION_STRING`.
 
 ## 4. Backend Responsibilities (.NET 8 Minimal API or Controller)
 - **Endpoint**: `POST /api/v1/patch-request`
@@ -48,6 +48,8 @@
   - Register Application Insights via `AddApplicationInsightsTelemetry`.
   - Log start/end using `ILogger` with `requestId`, `clientRequestId`, latency, and Azure OpenAI `usage` tokens when available.
   - Include `requestId` as `Request-Id` header in HTTP response for correlation.
+- **Cross-Origin Access**
+  - Development CORS policy must allow loopback origins (any localhost/127.0.0.1 + port) so the Vite dev server can reach `https://localhost:7241`.
 - **Error Handling**
   - Surface Azure OpenAI errors as `502` with sanitized message; unknown errors as `500`.
 
@@ -57,20 +59,26 @@ Minimal provisioning using Azure CLI (after `az login` and selecting subscriptio
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOCATION="eastus"
+LOCATION="australiaeast"
 RESOURCE_GROUP="<rg-name>"
 OPENAI_NAME="<openai-name>"
 APPINSIGHTS_NAME="<appinsights-name>"
 
+SUB_ID=$(az account show --query id -o tsv)
+
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 
-az cognitiveservices account create \
-  --name "$OPENAI_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --kind OpenAI \
-  --sku s0 \
-  --location "$LOCATION" \
-  --yes
+az rest --method PUT \
+  --url "https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$OPENAI_NAME?api-version=2023-05-01" \
+  --body "{
+    \"location\": \"$LOCATION\",
+    \"kind\": \"OpenAI\",
+    \"sku\": { \"name\": \"S0\" },
+    \"properties\": {
+      \"publicNetworkAccess\": \"Enabled\",
+      \"customSubDomainName\": \"$OPENAI_NAME\"
+    }
+  }"
 
 az cognitiveservices account deployment create \
   --name "$OPENAI_NAME" \
@@ -79,7 +87,8 @@ az cognitiveservices account deployment create \
   --model-name "gpt-4o" \
   --model-version "2024-05-13" \
   --model-format OpenAI \
-  --scale-settings-scale-type "standard"
+  --sku-name "GlobalStandard" \
+  --sku-capacity 50
 
 az monitor app-insights component create \
   --app "$APPINSIGHTS_NAME" \
@@ -87,7 +96,7 @@ az monitor app-insights component create \
   --resource-group "$RESOURCE_GROUP" \
   --application-type web
 ```
-- Store the Azure OpenAI endpoint, deployment name, and App Insights connection string in secure config (`appsettings.Development.json`, `.env`).
+- Store the Azure OpenAI endpoint, deployment name, and App Insights connection string in secure config (`dotnet user-secrets` for the API, `.env.local` for the frontend).
 - Backend should authenticate with `DefaultAzureCredential` (managed identity in cloud, Azure CLI locally) or fall back to API key for local testing if necessary.
 
 ## 6. Acceptance Criteria
