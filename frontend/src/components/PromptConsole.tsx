@@ -1,6 +1,8 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { usePatchRequest } from '../hooks/usePatchRequest';
 
+const PROMPT_MAX_LENGTH = 500;
+
 const formatDate = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -27,14 +29,23 @@ const PromptConsole = () => {
     <section>
       <form onSubmit={handleSubmit}>
         <label htmlFor="prompt">Describe your desired tone</label>
-        <textarea
-          id="prompt"
-          name="prompt"
-          placeholder="e.g. A glassy pad with shimmering motion"
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          disabled={isLoading}
-        />
+        <div className="textarea-wrapper">
+          <textarea
+            id="prompt"
+            name="prompt"
+            placeholder="e.g. A glassy pad with shimmering motion"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            disabled={isLoading}
+            maxLength={PROMPT_MAX_LENGTH}
+            aria-describedby="prompt-character-count"
+          />
+          <div className="textarea-footer">
+            <span id="prompt-character-count" className="char-count">
+              {prompt.length}/{PROMPT_MAX_LENGTH}
+            </span>
+          </div>
+        </div>
         <button type="submit" disabled={isSubmitDisabled}>
           {isLoading ? 'Sending…' : 'Send'}
         </button>

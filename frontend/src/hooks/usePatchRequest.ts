@@ -16,6 +16,13 @@ export function usePatchRequest(prompt: string) {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
       setError('Please enter a prompt before sending.');
+      setData(undefined);
+      return;
+    }
+
+    if (trimmedPrompt.length > 500) {
+      setError('Prompt cannot exceed 500 characters.');
+      setData(undefined);
       return;
     }
 

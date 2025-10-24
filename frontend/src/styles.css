@@ -59,6 +59,23 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+.textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.textarea-footer {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.char-count {
+  font-variant-numeric: tabular-nums;
+}
+
 button {
   align-self: flex-end;
   padding: 0.75rem 1.5rem;
