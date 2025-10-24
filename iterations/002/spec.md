@@ -130,3 +130,27 @@
 - Telemetry events include `requestId`, `clientRequestId`, `controlCount`, and success/failure outcome; backend logs capture Azure OpenAI latency and token usage.
 - Backend rejects malformed or control-deficient model responses with `502`, and the UI surfaces the friendly error message.
 - Voice parameter catalog is accessible to the backend at runtime from the resources folder and can be unit-tested independently of Azure dependencies.
+
+## 7. Testing Strategy
+- **Core Unit Tests**
+  - `VoiceParameterCatalog`: Load, parse, and validate parameter definitions
+  - `PatchGenerationAgent`: System prompt construction and response parsing
+  - `PatchControl` validation: Range checks, enum validation, required fields
+  
+- **Integration Tests**
+  - Basic happy path: Prompt → Azure OpenAI → Structured response
+  - Error cases:
+    - OpenAI returns malformed JSON
+    - Response missing required fields
+    - Response includes invalid control IDs
+    - Response has too few/many controls
+  
+- **End-to-End Smoke Tests**
+  - Submit prompt via UI and verify structured display
+  - Verify error message display for backend failures
+  - Test request/response correlation (IDs match)
+  
+- **Test Data**
+  - Sample prompts covering different sound types
+  - Mock OpenAI responses (valid and invalid)
+  - Reference parameter catalog for validation
