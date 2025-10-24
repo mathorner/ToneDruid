@@ -54,6 +54,7 @@ public sealed class PatchRequestRelayService
         {
             var chatOptions = new ChatCompletionsOptions
             {
+                DeploymentName = _options.Deployment,
                 Messages =
                 {
                     new ChatRequestSystemMessage(SystemPrompt),
@@ -62,7 +63,6 @@ public sealed class PatchRequestRelayService
             };
 
             Response<ChatCompletions> response = await _client.GetChatCompletionsAsync(
-                _options.Deployment,
                 chatOptions,
                 cancellationToken);
 

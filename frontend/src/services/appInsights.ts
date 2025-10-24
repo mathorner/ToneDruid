@@ -2,19 +2,31 @@ import { ApplicationInsights } from '@microsoft/applicationinsights-web';
 
 let appInsights: ApplicationInsights | undefined;
 
+const looksLikeConnectionString = (value: string) => {
+  return value.includes('InstrumentationKey=') || value.startsWith('Authorization=');
+};
+
 export const initializeAppInsights = (connectionString?: string) => {
-  if (appInsights || !connectionString) {
+  if (appInsights || !connectionString || !looksLikeConnectionString(connectionString)) {
+    if (connectionString && !looksLikeConnectionString(connectionString)) {
+      console.warn('Skipping Application Insights initialisation: invalid connection string format detected.');
+    }
     return;
   }
 
-  appInsights = new ApplicationInsights({
-    config: {
-      connectionString,
-      enableAutoRouteTracking: true
-    }
-  });
+  try {
+    appInsights = new ApplicationInsights({
+      config: {
+        connectionString,
+        enableAutoRouteTracking: true
+      }
+    });
 
-  appInsights.loadAppInsights();
+    appInsights.loadAppInsights();
+  } catch (error) {
+    console.error('Unable to initialise Application Insights.', error);
+    appInsights = undefined;
+  }
 };
 
 export const trackEvent = (
@@ -26,5 +38,9 @@ export const trackEvent = (
     return;
   }
 
-  appInsights.trackEvent({ name }, properties, measurements);
+  appInsights.trackEvent({
+    name,
+    properties,
+    measurements
+  });
 };

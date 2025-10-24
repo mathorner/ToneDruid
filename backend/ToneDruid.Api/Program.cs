@@ -1,3 +1,4 @@
+using System;
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Core;
@@ -33,9 +34,31 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddScoped<PatchRequestRelayService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                return uri.IsLoopback ||
+                       string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+            });
+    });
+});
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+
+app.UseCors("FrontendDev");
 
 app.MapPost("/api/v1/patch-request", async (
     HttpContext context,
