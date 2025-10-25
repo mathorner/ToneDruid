@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Azure;
@@ -204,7 +201,7 @@ public sealed class PatchGenerationAgent
         };
     }
 
-    private static PatchReasoningDto NormalizeReasoning(PatchReasoningDto? reasoning)
+    internal static PatchReasoningDto NormalizeReasoning(PatchReasoningDto? reasoning)
     {
         var intentSummary = string.IsNullOrWhiteSpace(reasoning?.IntentSummary)
             ? "Model did not provide an intent summary."

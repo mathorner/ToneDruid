@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToneDruid.Api", "backend/ToneDruid.Api/ToneDruid.Api.csproj", "{45E86153-FF82-43F6-AD10-1BDE7E3AF146}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToneDruid.Api.Tests", "backend/ToneDruid.Api.Tests/ToneDruid.Api.Tests.csproj", "{1C1450B3-C371-4AE0-9556-8342336061A4}"
+EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
         Debug|Any CPU = Debug|Any CPU
@@ -14,6 +16,10 @@ Global
         {45E86153-FF82-43F6-AD10-1BDE7E3AF146}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {45E86153-FF82-43F6-AD10-1BDE7E3AF146}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {45E86153-FF82-43F6-AD10-1BDE7E3AF146}.Release|Any CPU.Build.0 = Release|Any CPU
+        {1C1450B3-C371-4AE0-9556-8342336061A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {1C1450B3-C371-4AE0-9556-8342336061A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {1C1450B3-C371-4AE0-9556-8342336061A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {1C1450B3-C371-4AE0-9556-8342336061A4}.Release|Any CPU.Build.0 = Release|Any CPU
     EndGlobalSection
     GlobalSection(SolutionProperties) = preSolution
         HideSolutionNode = FALSE
