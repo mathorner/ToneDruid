@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using Azure;
 using Azure.AI.OpenAI;
@@ -21,7 +24,8 @@ public sealed class PatchGenerationAgent
     private readonly ILogger<PatchGenerationAgent> _logger;
     private readonly string _systemPromptTemplate;
     private readonly JsonSerializerOptions _serializerOptions;
-    private readonly ChatCompletionsResponseFormat _responseFormat;
+    private readonly JsonSerializerOptions _lenientSerializerOptions;
+    private ChatCompletionsResponseFormat? _responseFormat;
 
     public PatchGenerationAgent(
         OpenAIClient client,
@@ -39,6 +43,10 @@ public sealed class PatchGenerationAgent
         {
             PropertyNameCaseInsensitive = false
         };
+        _lenientSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
         _responseFormat = BuildResponseFormat();
     }
 
@@ -53,62 +61,363 @@ public sealed class PatchGenerationAgent
 
         var systemPrompt = _systemPromptTemplate.Replace("{{CONTROL_CATALOG}}", _catalog.BuildPromptCatalog(PromptSubsetLimitPerGroup));
 
-        var chatOptions = new ChatCompletionsOptions
+        var chatOptions = CreateChatOptions(systemPrompt, prompt, _responseFormat);
+
+        Response<ChatCompletions> response;
+        try
         {
-            DeploymentName = _options.Deployment,
-            Temperature = 0.4f,
-            ResponseFormat = _responseFormat
-        };
-
-        chatOptions.Messages.Add(new ChatRequestSystemMessage(systemPrompt));
-        chatOptions.Messages.Add(new ChatRequestUserMessage(prompt));
-
-        Response<ChatCompletions> response = await _client.GetChatCompletionsAsync(chatOptions, cancellationToken);
+            response = await _client.GetChatCompletionsAsync(chatOptions, cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ShouldFallbackToJsonFormat(ex) && !ReferenceEquals(_responseFormat, ChatCompletionsResponseFormat.JsonObject))
+        {
+            _logger.LogInformation("json_schema response format not supported by the current Azure OpenAI deployment. Falling back to default JSON parsing.");
+            var fallbackOptions = CreateChatOptions(systemPrompt, prompt, ChatCompletionsResponseFormat.JsonObject);
+            _responseFormat = ChatCompletionsResponseFormat.JsonObject;
+            response = await _client.GetChatCompletionsAsync(fallbackOptions, cancellationToken);
+        }
 
         string rawContent = response.Value.Choices
-            .SelectMany(choice => choice.Message.Content)
-            .OfType<ChatMessageTextContentItem>()
-            .Select(item => item.Text)
-            .FirstOrDefault() ?? string.Empty;
+            .Select(choice => choice.Message.Content)
+            .FirstOrDefault(content => !string.IsNullOrWhiteSpace(content))
+            ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawContent))
         {
             throw new PatchSuggestionValidationException("Model response was empty.", rawContent);
         }
 
-        PatchSuggestionDraft? payload;
-        try
-        {
-            payload = JsonSerializer.Deserialize<PatchSuggestionDraft>(rawContent, _serializerOptions);
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Failed to parse model response as PatchSuggestion JSON.");
-            throw new PatchSuggestionValidationException("Invalid JSON returned by model.", rawContent, ex);
-        }
+        var payload = TryDeserializePatchSuggestion(rawContent, out var deserializationError);
 
         if (payload is null)
         {
-            throw new PatchSuggestionValidationException("Model response did not contain a patch suggestion.", rawContent);
+            if (deserializationError is not null)
+            {
+                _logger.LogWarning(deserializationError, "Failed to parse model response as PatchSuggestion JSON.");
+            }
+            throw new PatchSuggestionValidationException("Invalid JSON returned by model.", rawContent, deserializationError);
         }
 
-        ValidateSuggestion(payload);
+        var normalized = NormalizeSuggestion(payload, prompt);
 
-        var resolvedModel = response.Value.Model ?? payload.Model ?? "unknown";
+        ValidateSuggestion(normalized);
+
+        var resolvedModel = response.Value.Model ?? normalized.Model ?? "unknown";
 
         var enriched = new PatchSuggestionDraft
         {
             Prompt = prompt,
-            Summary = payload.Summary,
-            Controls = payload.Controls,
-            Reasoning = payload.Reasoning,
-            RequestId = payload.RequestId,
-            ClientRequestId = payload.ClientRequestId,
-            GeneratedAtUtc = payload.GeneratedAtUtc,
+            Summary = normalized.Summary,
+            Controls = normalized.Controls,
+            Reasoning = normalized.Reasoning,
+            RequestId = normalized.RequestId,
+            ClientRequestId = normalized.ClientRequestId,
+            GeneratedAtUtc = normalized.GeneratedAtUtc,
             Model = resolvedModel
         };
 
         return (enriched, response.Value.Usage, resolvedModel, rawContent);
+    }
+
+    private PatchSuggestionDraft NormalizeSuggestion(PatchSuggestionDraft suggestion, string fallbackPrompt)
+    {
+        var controls = suggestion.Controls?
+            .Select(NormalizeControl)
+            .Where(control => control is not null)
+            .Cast<PatchControlDto>()
+            .ToList()
+            ?? new List<PatchControlDto>();
+
+        var reasoning = NormalizeReasoning(suggestion.Reasoning);
+
+        return new PatchSuggestionDraft
+        {
+            Prompt = string.IsNullOrWhiteSpace(suggestion.Prompt) ? fallbackPrompt : suggestion.Prompt,
+            Summary = string.IsNullOrWhiteSpace(suggestion.Summary) ? "Model response did not include a summary." : suggestion.Summary!,
+            Controls = controls,
+            Reasoning = reasoning,
+            RequestId = suggestion.RequestId,
+            ClientRequestId = suggestion.ClientRequestId,
+            GeneratedAtUtc = suggestion.GeneratedAtUtc,
+            Model = suggestion.Model
+        };
+    }
+
+    private PatchControlDto? NormalizeControl(PatchControlDto control)
+    {
+        if (string.IsNullOrWhiteSpace(control.Id))
+        {
+            return null;
+        }
+
+        var catalogControl = _catalog.GetControlById(control.Id);
+
+        var label = !string.IsNullOrWhiteSpace(control.Label)
+            ? control.Label!
+            : catalogControl?.Label ?? control.Id;
+
+        var group = !string.IsNullOrWhiteSpace(control.Group)
+            ? control.Group!
+            : catalogControl?.GroupLabel ?? "General";
+
+        var valueType = !string.IsNullOrWhiteSpace(control.ValueType)
+            ? control.ValueType
+            : catalogControl?.ValueType switch
+            {
+                VoiceParameterValueType.Boolean => "boolean",
+                VoiceParameterValueType.Enumeration => "enumeration",
+                VoiceParameterValueType.Continuous => "continuous",
+                _ => "continuous"
+            };
+
+        var range = control.Range;
+        if (range is null && catalogControl?.Range is not null)
+        {
+            range = new PatchControlRangeDto
+            {
+                Min = catalogControl.Range.Min,
+                Max = catalogControl.Range.Max,
+                Unit = catalogControl.Range.Unit
+            };
+        }
+
+        var allowedValues = control.AllowedValues ?? catalogControl?.AllowedValues;
+
+        var explanation = string.IsNullOrWhiteSpace(control.Explanation)
+            ? ""
+            : control.Explanation!;
+
+        var confidence = string.IsNullOrWhiteSpace(control.Confidence)
+            ? "medium"
+            : control.Confidence!.ToLowerInvariant();
+
+        return new PatchControlDto
+        {
+            Id = control.Id,
+            Label = label,
+            Group = group,
+            Value = control.Value,
+            ValueType = valueType,
+            Range = range,
+            AllowedValues = allowedValues,
+            Explanation = explanation,
+            Confidence = confidence
+        };
+    }
+
+    private static PatchReasoningDto NormalizeReasoning(PatchReasoningDto? reasoning)
+    {
+        var intentSummary = string.IsNullOrWhiteSpace(reasoning?.IntentSummary)
+            ? "Model did not provide an intent summary."
+            : reasoning!.IntentSummary;
+
+        var notes = reasoning?.SoundDesignNotes?
+                .Where(note => !string.IsNullOrWhiteSpace(note))
+                .Select(note => note!.Trim())
+                .ToList()
+            ?? new List<string>();
+
+        if (notes.Count == 0)
+        {
+            notes.Add("Model did not provide detailed sound design notes.");
+        }
+
+        var assumptions = reasoning?.Assumptions?
+                .Where(assumption => !string.IsNullOrWhiteSpace(assumption))
+                .Select(assumption => assumption!.Trim())
+                .ToArray()
+            ?? Array.Empty<string>();
+
+        return new PatchReasoningDto
+        {
+            IntentSummary = intentSummary,
+            SoundDesignNotes = notes,
+            Assumptions = assumptions
+        };
+    }
+
+    private PatchSuggestionDraft? TryDeserializePatchSuggestion(string rawContent, out Exception? error)
+    {
+        error = null;
+        var candidates = new List<string>();
+
+        var trimmed = rawContent.Trim();
+        if (!string.IsNullOrEmpty(trimmed))
+        {
+            candidates.Add(trimmed);
+        }
+
+        if (TryExtractJsonCodeBlock(rawContent, out var codeBlock))
+        {
+            candidates.Add(codeBlock);
+        }
+
+        if (TryExtractFirstJsonObject(rawContent, out var objectSnippet))
+        {
+            candidates.Add(objectSnippet);
+        }
+
+        // Remove duplicates while preserving order.
+        var uniqueCandidates = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var candidate in candidates)
+        {
+            if (seen.Add(candidate))
+            {
+                uniqueCandidates.Add(candidate);
+            }
+        }
+
+        foreach (var candidate in uniqueCandidates)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<PatchSuggestionDraft>(candidate, _serializerOptions);
+            }
+            catch (JsonException ex)
+            {
+                error = ex;
+            }
+        }
+
+        foreach (var candidate in uniqueCandidates)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<PatchSuggestionDraft>(candidate, _lenientSerializerOptions);
+            }
+            catch (JsonException ex)
+            {
+                error = ex;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryExtractJsonCodeBlock(string content, out string json)
+    {
+        var start = content.IndexOf("```", StringComparison.Ordinal);
+        while (start >= 0)
+        {
+            var languageEnd = content.IndexOf('\n', start + 3);
+            if (languageEnd < 0)
+            {
+                break;
+            }
+
+            var language = content.Substring(start + 3, languageEnd - (start + 3)).Trim().ToLowerInvariant();
+
+            var end = content.IndexOf("```", languageEnd + 1, StringComparison.Ordinal);
+            if (end < 0)
+            {
+                break;
+            }
+
+            var block = content.Substring(languageEnd + 1, end - (languageEnd + 1)).Trim();
+            if (!string.IsNullOrEmpty(block) && (language.Length == 0 || language.Contains("json", StringComparison.Ordinal)))
+            {
+                json = block;
+                return true;
+            }
+
+            start = content.IndexOf("```", end + 3, StringComparison.Ordinal);
+        }
+
+        json = string.Empty;
+        return false;
+    }
+
+    private static bool TryExtractFirstJsonObject(string content, out string json)
+    {
+        var span = content.AsSpan();
+        var index = span.IndexOf('{');
+        if (index < 0)
+        {
+            json = string.Empty;
+            return false;
+        }
+
+        var depth = 0;
+        var inString = false;
+        var escape = false;
+        var startIndex = -1;
+
+        for (var i = index; i < span.Length; i++)
+        {
+            var ch = span[i];
+
+            if (inString)
+            {
+                if (ch == '\\' && !escape)
+                {
+                    escape = true;
+                    continue;
+                }
+
+                if (ch == '"' && !escape)
+                {
+                    inString = false;
+                }
+
+                escape = false;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                inString = true;
+                continue;
+            }
+
+            if (ch == '{')
+            {
+                if (depth == 0)
+                {
+                    startIndex = i;
+                }
+
+                depth++;
+                continue;
+            }
+
+            if (ch == '}')
+            {
+                depth--;
+                if (depth == 0 && startIndex >= 0)
+                {
+                    json = span.Slice(startIndex, i - startIndex + 1).ToString().Trim();
+                    return true;
+                }
+            }
+        }
+
+        json = string.Empty;
+        return false;
+    }
+
+    private ChatCompletionsOptions CreateChatOptions(string systemPrompt, string userPrompt, ChatCompletionsResponseFormat? responseFormat)
+    {
+        var options = new ChatCompletionsOptions
+        {
+            DeploymentName = _options.Deployment,
+            Temperature = 0.4f
+        };
+
+        if (responseFormat is not null)
+        {
+            options.ResponseFormat = responseFormat;
+        }
+
+        options.Messages.Add(new ChatRequestSystemMessage(systemPrompt));
+        options.Messages.Add(new ChatRequestUserMessage(userPrompt));
+
+        return options;
+    }
+
+    private static bool ShouldFallbackToJsonFormat(RequestFailedException ex)
+    {
+        return ex.Status == 400
+            && ex.Message.Contains("response_format value as json_schema", StringComparison.OrdinalIgnoreCase);
     }
 
     private void ValidateSuggestion(PatchSuggestionDraft suggestion)
@@ -304,9 +613,42 @@ public sealed class PatchGenerationAgent
             }
         };
 
-        return ChatCompletionsResponseFormat.CreateJsonSchema(
-            "patch_suggestion",
-            BinaryData.FromObjectAsJson(schema));
+        var jsonSchemaPayload = new
+        {
+            name = "patch_suggestion",
+            schema,
+            strict = true
+        };
+
+        var responseFormatAssembly = typeof(ChatCompletionsResponseFormat).Assembly;
+        var jsonFormatType = responseFormatAssembly.GetType("Azure.AI.OpenAI.ChatCompletionsJsonResponseFormat");
+        if (jsonFormatType is not null)
+        {
+            var ctor = jsonFormatType.GetConstructor(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                binder: null,
+                new[] { typeof(string), typeof(IDictionary<string, BinaryData>) },
+                modifiers: null);
+
+            if (ctor is not null)
+            {
+                var instance = ctor.Invoke(new object?[]
+                {
+                    "json_schema",
+                    new Dictionary<string, BinaryData>
+                    {
+                        ["json_schema"] = BinaryData.FromObjectAsJson(jsonSchemaPayload)
+                    }
+                });
+
+                if (instance is ChatCompletionsResponseFormat responseFormat)
+                {
+                    return responseFormat;
+                }
+            }
+        }
+
+        return ChatCompletionsResponseFormat.JsonObject;
     }
 
     private static string LoadPromptTemplate(IHostEnvironment environment)

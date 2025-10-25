@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Linq;
 using Azure;
+using Azure.AI.OpenAI;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using ToneDruid.Api.Agents;
@@ -50,9 +51,9 @@ public sealed class PatchRequestRelayService
             var reasoning = new PatchReasoningDto
             {
                 IntentSummary = draft.Reasoning.IntentSummary,
-                SoundDesignNotes = draft.Reasoning.SoundDesignNotes?.Where(note => !string.IsNullOrWhiteSpace(note)).ToList()
+                SoundDesignNotes = draft.Reasoning.SoundDesignNotes?.Where(note => !string.IsNullOrWhiteSpace(note)).ToArray()
                     ?? Array.Empty<string>(),
-                Assumptions = draft.Reasoning.Assumptions?.Where(assumption => !string.IsNullOrWhiteSpace(assumption)).ToList()
+                Assumptions = draft.Reasoning.Assumptions?.Where(assumption => !string.IsNullOrWhiteSpace(assumption)).ToArray()
                     ?? Array.Empty<string>()
             };
 
@@ -117,16 +118,18 @@ public sealed class PatchRequestRelayService
         TimeSpan duration,
         string rawContent)
     {
-        var properties = new Dictionary<string, string>
+        var reasoningNotes = suggestion.Reasoning?.SoundDesignNotes ?? Array.Empty<string>();
+
+        var properties = new Dictionary<string, string?>
         {
             ["model"] = suggestion.Model,
             ["controlCount"] = suggestion.Controls.Count.ToString(),
-            ["hasReasoning"] = (suggestion.Reasoning.SoundDesignNotes.Count > 0).ToString(),
+            ["hasReasoning"] = (reasoningNotes.Count > 0).ToString(),
             ["rawLength"] = rawContent.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)
         };
 
         var confidenceBreakdown = suggestion.Controls
-            .GroupBy(c => c.Confidence.ToLowerInvariant())
+            .GroupBy(c => (c.Confidence ?? "unknown").ToLowerInvariant())
             .ToDictionary(g => g.Key, g => g.Count());
 
         foreach (var kvp in confidenceBreakdown)
@@ -137,7 +140,7 @@ public sealed class PatchRequestRelayService
         var measurements = new Dictionary<string, double>
         {
             ["controlCount"] = suggestion.Controls.Count,
-            ["soundDesignNotes"] = suggestion.Reasoning.SoundDesignNotes.Count
+            ["soundDesignNotes"] = reasoningNotes.Count
         };
 
         TrackEvent("patch_request_succeeded", requestId, clientRequestId, startedAt, duration, usage, null, properties, measurements);

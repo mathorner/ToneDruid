@@ -1,8 +1,15 @@
+using System.Text.Json.Serialization;
+
 namespace ToneDruid.Api.Models;
 
 public sealed class PatchReasoningDto
 {
-    public required string IntentSummary { get; init; }
-    public required IReadOnlyList<string> SoundDesignNotes { get; init; }
-    public required IReadOnlyList<string> Assumptions { get; init; }
+    [JsonPropertyName("intentSummary")]
+    public string? IntentSummary { get; init; }
+
+    [JsonPropertyName("soundDesignNotes")]
+    public IReadOnlyList<string>? SoundDesignNotes { get; init; }
+
+    [JsonPropertyName("assumptions")]
+    public IReadOnlyList<string>? Assumptions { get; init; }
 }

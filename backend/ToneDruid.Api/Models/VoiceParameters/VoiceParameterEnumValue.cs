@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace ToneDruid.Api.Models.VoiceParameters;
 
+[JsonConverter(typeof(VoiceParameterEnumValueConverter))]
 public sealed class VoiceParameterEnumValue
 {
     [JsonPropertyName("value")]
