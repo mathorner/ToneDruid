@@ -1,4 +1,4 @@
-import { ApplicationInsights } from '@microsoft/applicationinsights-web';
+import { ApplicationInsights, SeverityLevel } from '@microsoft/applicationinsights-web';
 
 let appInsights: ApplicationInsights | undefined;
 
@@ -42,5 +42,17 @@ export const trackEvent = (
     name,
     properties,
     measurements
+  });
+};
+
+export const trackClientWarning = (message: string, properties?: Record<string, string>) => {
+  if (!appInsights) {
+    return;
+  }
+
+  appInsights.trackTrace({
+    message,
+    severityLevel: SeverityLevel.Warning,
+    properties
   });
 };

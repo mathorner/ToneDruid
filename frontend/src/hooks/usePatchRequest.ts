@@ -1,14 +1,32 @@
 import { useCallback, useState } from 'react';
-import type { PatchRequestResult } from '../types/patchRequest';
-import { trackEvent } from '../services/appInsights';
+import type { PatchSuggestion } from '../types/patchRequest';
+import { trackClientWarning, trackEvent } from '../services/appInsights';
 
 const buildEndpoint = () => {
   const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
   return `${baseUrl}/api/v1/patch-request`;
 };
 
+const isPatchSuggestion = (value: unknown): value is PatchSuggestion => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<PatchSuggestion>;
+  return (
+    typeof candidate.prompt === 'string' &&
+    typeof candidate.summary === 'string' &&
+    Array.isArray(candidate.controls) &&
+    candidate.controls.length >= 0 &&
+    typeof candidate.requestId === 'string' &&
+    typeof candidate.clientRequestId === 'string' &&
+    typeof candidate.generatedAtUtc === 'string' &&
+    typeof candidate.model === 'string'
+  );
+};
+
 export function usePatchRequest(prompt: string) {
-  const [data, setData] = useState<PatchRequestResult | undefined>();
+  const [data, setData] = useState<PatchSuggestion | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,12 +35,14 @@ export function usePatchRequest(prompt: string) {
     if (!trimmedPrompt) {
       setError('Please enter a prompt before sending.');
       setData(undefined);
+      trackClientWarning('prompt_validation_failed', { reason: 'empty' });
       return;
     }
 
     if (trimmedPrompt.length > 500) {
       setError('Prompt cannot exceed 500 characters.');
       setData(undefined);
+      trackClientWarning('prompt_validation_failed', { reason: 'length_exceeded' });
       return;
     }
 
@@ -39,7 +59,8 @@ export function usePatchRequest(prompt: string) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-client-request-id': clientRequestId
+          'x-client-request-id': clientRequestId,
+          'x-iteration': '002'
         },
         body: JSON.stringify({ prompt: trimmedPrompt })
       });
@@ -74,14 +95,17 @@ export function usePatchRequest(prompt: string) {
         return;
       }
 
-      const result = (isJson ? await response.json() : undefined) as PatchRequestResult | undefined;
+      const result = (isJson ? await response.json() : undefined) as unknown;
 
-      if (result) {
+      if (isPatchSuggestion(result)) {
         trackEvent(
           'patch_request_succeeded',
           {
             clientRequestId,
-            requestId: result.requestId
+            requestId: result.requestId,
+            model: result.model,
+            controlCount: result.controls.length.toString(),
+            hasReasoning: (result.reasoning?.soundDesignNotes?.length ?? 0 > 0).toString()
           },
           { durationMs: elapsed }
         );
@@ -93,7 +117,7 @@ export function usePatchRequest(prompt: string) {
           { clientRequestId, reason: 'invalid_response' },
           { durationMs: elapsed }
         );
-        setError('Received an unexpected response from the server.');
+        setError('Unable to interpret patch suggestion. Please try again.');
         setData(undefined);
       }
     } catch (err) {

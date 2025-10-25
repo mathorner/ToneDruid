@@ -1,16 +1,8 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { usePatchRequest } from '../hooks/usePatchRequest';
+import PatchSuggestionView from './PatchSuggestionView';
 
 const PROMPT_MAX_LENGTH = 500;
-
-const formatDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString();
-};
 
 const PromptConsole = () => {
   const [prompt, setPrompt] = useState('');
@@ -61,7 +53,7 @@ const PromptConsole = () => {
       {!isLoading && !data && !error && (
         <div className="placeholder-card">
           <strong>Ready when you are.</strong>
-          <p>Describe a sound and Tone Druid will respond using Azure OpenAI.</p>
+          <p>Describe a sound and Tone Druid will return a structured Minilogue XD patch with reasoning.</p>
         </div>
       )}
 
@@ -72,26 +64,7 @@ const PromptConsole = () => {
         </div>
       )}
 
-      {data && (
-        <article className="response-card">
-          <h2>Response</h2>
-          <p>{data.response}</p>
-          <div className="meta">
-            <span>
-              <strong>Prompt:</strong> {data.prompt}
-            </span>
-            <span>
-              <strong>Request Id:</strong> {data.requestId}
-            </span>
-            <span>
-              <strong>Client Request Id:</strong> {data.clientRequestId}
-            </span>
-            <span>
-              <strong>Generated:</strong> {formatDate(data.generatedAtUtc)}
-            </span>
-          </div>
-        </article>
-      )}
+      {data && <PatchSuggestionView suggestion={data} />}
     </section>
   );
 };

@@ -1,0 +1,632 @@
+[
+  {
+    "id": "master.tempo",
+    "label": "Tempo",
+    "group": "Master Controls",
+    "valueType": "continuous",
+    "range": {
+      "min": 56,
+      "max": 240
+    }
+  },
+  {
+    "id": "master.portamento",
+    "label": "Portamento Time",
+    "group": "Master Controls",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 127
+    }
+  },
+  {
+    "id": "voice_mode.type",
+    "label": "Voice Mode Type",
+    "group": "Master Controls",
+    "valueType": "enumeration",
+    "allowedValues": [
+      "poly",
+      "unison",
+      "chord",
+      "arp_latch"
+    ]
+  },
+  {
+    "id": "voice_mode.depth",
+    "label": "Voice Mode Depth",
+    "group": "Master Controls",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "vco1.wave",
+    "label": "VCO 1 Waveform",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "vco1.octave",
+    "label": "VCO 1 Octave",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "vco1.pitch",
+    "label": "VCO 1 Fine Pitch",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": -1200,
+      "max": 1200
+    }
+  },
+  {
+    "id": "vco1.shape",
+    "label": "VCO 1 Shape",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "vco2.wave",
+    "label": "VCO 2 Waveform",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "vco2.octave",
+    "label": "VCO 2 Octave",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "vco2.pitch",
+    "label": "VCO 2 Fine Pitch",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": -1200,
+      "max": 1200
+    }
+  },
+  {
+    "id": "vco2.shape",
+    "label": "VCO 2 Shape",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "vco2.sync",
+    "label": "VCO 2 Sync",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "boolean"
+  },
+  {
+    "id": "vco2.ring",
+    "label": "VCO 2 Ring Mod",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "boolean"
+  },
+  {
+    "id": "vco2.cross_mod_depth",
+    "label": "Cross Mod Depth",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "multi_engine.mode",
+    "label": "Multi Engine Mode",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "multi_engine.noise.type",
+    "label": "Noise Generator Type",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "multi_engine.noise.shape",
+    "label": "Noise Shape Parameter",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "multi_engine.noise.shape_secondary",
+    "label": "Noise Shape Key Track",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "multi_engine.vpm.type",
+    "label": "VPM Oscillator Type",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "multi_engine.vpm.mod_depth",
+    "label": "VPM Mod Depth",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 15
+    }
+  },
+  {
+    "id": "multi_engine.vpm.ratio_offset",
+    "label": "VPM Ratio Offset",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "multi_engine.user.slot",
+    "label": "User Oscillator Slot",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 15
+    }
+  },
+  {
+    "id": "multi_engine.user.shape",
+    "label": "User Oscillator Shape",
+    "group": "Oscillators & Multi Engine",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "mixer.vco1_level",
+    "label": "VCO 1 Level",
+    "group": "Mixer",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "mixer.vco2_level",
+    "label": "VCO 2 Level",
+    "group": "Mixer",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "mixer.multi_level",
+    "label": "Multi Engine Level",
+    "group": "Mixer",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "filter.cutoff",
+    "label": "Cutoff Frequency",
+    "group": "Filter",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "filter.resonance",
+    "label": "Resonance",
+    "group": "Filter",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "filter.drive",
+    "label": "Drive Amount",
+    "group": "Filter",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "filter.keytrack",
+    "label": "Key Tracking",
+    "group": "Filter",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "amp_eg.attack",
+    "label": "Amp EG Attack",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "amp_eg.decay",
+    "label": "Amp EG Decay",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "amp_eg.sustain",
+    "label": "Amp EG Sustain",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "amp_eg.release",
+    "label": "Amp EG Release",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "eg.attack",
+    "label": "Program EG Attack",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "eg.decay",
+    "label": "Program EG Decay",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "eg.intensity",
+    "label": "EG Intensity",
+    "group": "Envelopes",
+    "valueType": "continuous",
+    "range": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "eg.target",
+    "label": "EG Target",
+    "group": "Envelopes",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "lfo.wave",
+    "label": "LFO Waveform",
+    "group": "LFO",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "lfo.mode",
+    "label": "LFO Mode",
+    "group": "LFO",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "lfo.rate",
+    "label": "LFO Rate",
+    "group": "LFO",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "lfo.intensity",
+    "label": "LFO Intensity",
+    "group": "LFO",
+    "valueType": "continuous",
+    "range": {
+      "min": -511,
+      "max": 511
+    }
+  },
+  {
+    "id": "lfo.target",
+    "label": "LFO Target",
+    "group": "LFO",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "effects.type",
+    "label": "Effect Block",
+    "group": "Effects",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "effects.variant",
+    "label": "Effect Variant",
+    "group": "Effects",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "effects.time",
+    "label": "Effect Time",
+    "group": "Effects",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "effects.depth",
+    "label": "Effect Depth",
+    "group": "Effects",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "effects.mix_balance",
+    "label": "Effect Wet/Dry Mix",
+    "group": "Effects",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 1023
+    }
+  },
+  {
+    "id": "joystick.x_positive_range",
+    "label": "Joystick X+ Bend Range",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "joystick.x_negative_range",
+    "label": "Joystick X- Bend Range",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "joystick.assignable_targets",
+    "label": "Joystick Assignable Destinations",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "allowedValues": []
+  },
+  {
+    "id": "joystick.y_positive_range",
+    "label": "Joystick Y+ Range",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "joystick.y_negative_range",
+    "label": "Joystick Y- Range",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "cv.mode",
+    "label": "CV Input Mode",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "program.multi_octave",
+    "label": "Multi Octave",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "program.multi_routing",
+    "label": "Multi Routing",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "program.eg_velocity",
+    "label": "EG Velocity",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 127
+    }
+  },
+  {
+    "id": "program.amp_velocity",
+    "label": "Amp Velocity",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": 0,
+      "max": 127
+    }
+  },
+  {
+    "id": "program.eg_legato",
+    "label": "EG Legato",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "program.portamento_mode",
+    "label": "Portamento Mode",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "program.portamento_bpm",
+    "label": "Portamento BPM Sync",
+    "group": "Program Edit Parameters",
+    "valueType": "boolean"
+  },
+  {
+    "id": "program.level",
+    "label": "Program Level",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -18,
+      "max": 6
+    }
+  },
+  {
+    "id": "cv.assignable_targets",
+    "label": "CV Assignable Destinations",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous"
+  },
+  {
+    "id": "cv.in1_range",
+    "label": "CV IN1 Range",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "cv.in2_range",
+    "label": "CV IN2 Range",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "pitch.microtuning",
+    "label": "Microtuning Table",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "pitch.scale_key",
+    "label": "Scale Key",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -12,
+      "max": 12
+    }
+  },
+  {
+    "id": "pitch.program_tuning",
+    "label": "Program Tuning",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -50,
+      "max": 50
+    }
+  },
+  {
+    "id": "pitch.transpose",
+    "label": "Transpose",
+    "group": "Program Edit Parameters",
+    "valueType": "continuous",
+    "range": {
+      "min": -12,
+      "max": 12
+    }
+  },
+  {
+    "id": "lfo.target_oscillator",
+    "label": "LFO Target Oscillator",
+    "group": "Program Edit Parameters",
+    "valueType": "enumeration",
+    "allowedValues": []
+  },
+  {
+    "id": "lfo.key_sync",
+    "label": "LFO Key Sync",
+    "group": "Program Edit Parameters",
+    "valueType": "boolean"
+  },
+  {
+    "id": "lfo.voice_sync",
+    "label": "LFO Voice Sync",
+    "group": "Program Edit Parameters",
+    "valueType": "boolean"
+  }
+]
