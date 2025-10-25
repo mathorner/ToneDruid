@@ -1,46 +1,36 @@
 using System.Diagnostics;
+using System.Linq;
 using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Extensions.Options;
+using ToneDruid.Api.Agents;
 using ToneDruid.Api.Models;
-using ToneDruid.Api.Options;
 
 namespace ToneDruid.Api.Services;
 
 public sealed class PatchRequestRelayService
 {
-    private const string SystemPrompt = "You are Tone Druid. Reply conversationally to the given prompt.";
-
-    private readonly OpenAIClient _client;
-    private readonly AzureOpenAIOptions _options;
+    private readonly PatchGenerationAgent _agent;
     private readonly ILogger<PatchRequestRelayService> _logger;
     private readonly TelemetryClient? _telemetry;
 
     public PatchRequestRelayService(
-        OpenAIClient client,
-        IOptions<AzureOpenAIOptions> options,
+        PatchGenerationAgent agent,
         ILogger<PatchRequestRelayService> logger,
         TelemetryClient? telemetry = null)
     {
-        _client = client;
-        _options = options.Value;
+        _agent = agent;
         _logger = logger;
         _telemetry = telemetry;
     }
 
-    public async Task<PatchResponseDto> RelayAsync(
+    public async Task<PatchSuggestionDto> RelayAsync(
         string prompt,
         string clientRequestId,
         Guid requestId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_options.Deployment))
-        {
-            throw new InvalidOperationException("AzureOpenAI deployment name is not configured.");
-        }
-
         var startedAt = DateTimeOffset.UtcNow;
         var stopwatch = Stopwatch.StartNew();
         TrackEvent("patch_request_started", requestId, clientRequestId, startedAt, null);
@@ -52,69 +42,119 @@ public sealed class PatchRequestRelayService
 
         try
         {
-            var chatOptions = new ChatCompletionsOptions
-            {
-                DeploymentName = _options.Deployment,
-                Messages =
-                {
-                    new ChatRequestSystemMessage(SystemPrompt),
-                    new ChatRequestUserMessage(prompt)
-                }
-            };
-
-            Response<ChatCompletions> response = await _client.GetChatCompletionsAsync(
-                chatOptions,
-                cancellationToken);
-
-            string responseText = response.Value.Choices
-                .SelectMany(choice => choice.Message.Content)
-                .OfType<ChatMessageTextContentItem>()
-                .Select(item => item.Text)
-                .FirstOrDefault() ?? string.Empty;
+            var (draft, usage, model, rawContent) = await _agent.GenerateAsync(prompt, cancellationToken);
 
             stopwatch.Stop();
-            TrackSuccess(response.Value.Usage, requestId, clientRequestId, startedAt, stopwatch.Elapsed);
+
+            var generatedAt = DateTimeOffset.UtcNow;
+
+            var reasoning = new PatchReasoningDto
+            {
+                IntentSummary = draft.Reasoning.IntentSummary,
+                SoundDesignNotes = draft.Reasoning.SoundDesignNotes?.Where(note => !string.IsNullOrWhiteSpace(note)).ToArray()
+                    ?? Array.Empty<string>(),
+                Assumptions = draft.Reasoning.Assumptions?.Where(assumption => !string.IsNullOrWhiteSpace(assumption)).ToArray()
+                    ?? Array.Empty<string>()
+            };
+
+            var suggestion = new PatchSuggestionDto
+            {
+                Prompt = prompt,
+                Summary = draft.Summary,
+                Controls = draft.Controls,
+                Reasoning = reasoning,
+                RequestId = requestId.ToString(),
+                ClientRequestId = clientRequestId,
+                GeneratedAtUtc = generatedAt.ToString("O"),
+                Model = model ?? "unknown"
+            };
+
+            TrackSuccess(usage, suggestion, requestId, clientRequestId, startedAt, stopwatch.Elapsed, rawContent);
 
             _logger.LogInformation(
-                "Received response for RequestId {RequestId} (ClientRequestId {ClientRequestId}) in {ElapsedMilliseconds} ms. Tokens: prompt={PromptTokens}, completion={CompletionTokens}, total={TotalTokens}",
+                "Received structured suggestion for RequestId {RequestId} (ClientRequestId {ClientRequestId}) in {ElapsedMilliseconds} ms. Tokens: prompt={PromptTokens}, completion={CompletionTokens}, total={TotalTokens}",
                 requestId,
                 clientRequestId,
                 stopwatch.ElapsedMilliseconds,
-                response.Value.Usage?.PromptTokens ?? 0,
-                response.Value.Usage?.CompletionTokens ?? 0,
-                response.Value.Usage?.TotalTokens ?? 0);
+                usage?.PromptTokens ?? 0,
+                usage?.CompletionTokens ?? 0,
+                usage?.TotalTokens ?? 0);
 
-            return new PatchResponseDto(
-                prompt,
-                responseText,
-                requestId.ToString(),
-                clientRequestId,
-                DateTimeOffset.UtcNow);
+            return suggestion;
+        }
+        catch (PatchSuggestionValidationException ex)
+        {
+            stopwatch.Stop();
+            TrackFailure(ex, requestId, clientRequestId, startedAt, stopwatch.Elapsed, ex.RawContent);
+            _logger.LogWarning(
+                ex,
+                "Model response failed validation for RequestId {RequestId} and ClientRequestId {ClientRequestId}",
+                requestId,
+                clientRequestId);
+            throw;
         }
         catch (RequestFailedException ex)
         {
             stopwatch.Stop();
-            TrackFailure(ex, requestId, clientRequestId, startedAt, stopwatch.Elapsed);
+            TrackFailure(ex, requestId, clientRequestId, startedAt, stopwatch.Elapsed, null);
             _logger.LogError(ex, "Azure OpenAI request failed for RequestId {RequestId} and ClientRequestId {ClientRequestId}", requestId, clientRequestId);
             throw;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            TrackFailure(ex, requestId, clientRequestId, startedAt, stopwatch.Elapsed);
+            TrackFailure(ex, requestId, clientRequestId, startedAt, stopwatch.Elapsed, null);
             _logger.LogError(ex, "Unhandled error relaying prompt for RequestId {RequestId} and ClientRequestId {ClientRequestId}", requestId, clientRequestId);
             throw;
         }
     }
 
-    private void TrackSuccess(CompletionsUsage? usage, Guid requestId, string clientRequestId, DateTimeOffset startedAt, TimeSpan duration)
+    private void TrackSuccess(
+        CompletionsUsage? usage,
+        PatchSuggestionDto suggestion,
+        Guid requestId,
+        string clientRequestId,
+        DateTimeOffset startedAt,
+        TimeSpan duration,
+        string rawContent)
     {
-        TrackEvent("patch_request_succeeded", requestId, clientRequestId, startedAt, duration, usage);
+        var reasoningNotes = suggestion.Reasoning?.SoundDesignNotes ?? Array.Empty<string>();
+
+        var properties = new Dictionary<string, string?>
+        {
+            ["model"] = suggestion.Model,
+            ["controlCount"] = suggestion.Controls.Count.ToString(),
+            ["hasReasoning"] = (reasoningNotes.Count > 0).ToString(),
+            ["rawLength"] = rawContent.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        };
+
+        var confidenceBreakdown = suggestion.Controls
+            .GroupBy(c => (c.Confidence ?? "unknown").ToLowerInvariant())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        foreach (var kvp in confidenceBreakdown)
+        {
+            properties[$"confidence_{kvp.Key}"] = kvp.Value.ToString();
+        }
+
+        var measurements = new Dictionary<string, double>
+        {
+            ["controlCount"] = suggestion.Controls.Count,
+            ["soundDesignNotes"] = reasoningNotes.Count
+        };
+
+        TrackEvent("patch_request_succeeded", requestId, clientRequestId, startedAt, duration, usage, null, properties, measurements);
     }
 
-    private void TrackFailure(Exception ex, Guid requestId, string clientRequestId, DateTimeOffset startedAt, TimeSpan duration)
+    private void TrackFailure(Exception ex, Guid requestId, string clientRequestId, DateTimeOffset startedAt, TimeSpan duration, string? rawContent)
     {
-        TrackEvent("patch_request_failed", requestId, clientRequestId, startedAt, duration, null, ex);
+        var properties = new Dictionary<string, string?>
+        {
+            ["exceptionType"] = ex.GetType().Name,
+            ["rawResponse"] = string.IsNullOrEmpty(rawContent) ? null : Truncate(rawContent, 2048)
+        };
+
+        TrackEvent("patch_request_failed", requestId, clientRequestId, startedAt, duration, null, ex, properties, null);
     }
 
     private void TrackEvent(
@@ -124,7 +164,9 @@ public sealed class PatchRequestRelayService
         DateTimeOffset startedAt,
         TimeSpan? duration,
         CompletionsUsage? usage = null,
-        Exception? exception = null)
+        Exception? exception = null,
+        IDictionary<string, string?>? additionalProperties = null,
+        IDictionary<string, double>? measurements = null)
     {
         if (_telemetry is null)
         {
@@ -150,11 +192,40 @@ public sealed class PatchRequestRelayService
             telemetry.Metrics[nameof(CompletionsUsage.TotalTokens)] = usage.TotalTokens;
         }
 
+        if (measurements is not null)
+        {
+            foreach (var (key, value) in measurements)
+            {
+                telemetry.Metrics[key] = value;
+            }
+        }
+
         if (exception is not null)
         {
             telemetry.Properties["exceptionType"] = exception.GetType().Name;
         }
 
+        if (additionalProperties is not null)
+        {
+            foreach (var (key, value) in additionalProperties)
+            {
+                if (value is not null)
+                {
+                    telemetry.Properties[key] = value;
+                }
+            }
+        }
+
         _telemetry.TrackEvent(telemetry);
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        if (value.Length <= maxLength)
+        {
+            return value;
+        }
+
+        return value[..maxLength];
     }
 }
