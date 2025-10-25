@@ -56,3 +56,6 @@ nunit-*.xml
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+
+# macOS Finder metadata
+.DS_Store

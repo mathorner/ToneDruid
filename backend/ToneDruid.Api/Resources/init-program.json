@@ -1,0 +1,124 @@
+{
+  "master": {
+    "tempo": 120.0,
+    "portamento": 0,
+    "voice_mode": {
+      "type": "arp_latch",
+      "depth": 1
+    }
+  },
+  "oscillators": {
+    "vco1": {
+      "wave": "square",
+      "octave": "8'",
+      "pitch": 0,
+      "shape": 0
+    },
+    "vco2": {
+      "wave": "square",
+      "octave": "8'",
+      "pitch": 0,
+      "shape": 0,
+      "sync": false,
+      "ring": false,
+      "cross_mod_depth": 0
+    },
+    "multi_engine": {
+      "mode": "noise",
+      "noise": {
+        "type": "high",
+        "shape": 0.0,
+        "shape_secondary": 0.0
+      },
+      "vpm": {
+        "type": "sin1",
+        "mod_depth": 0.0,
+        "ratio_offset": "1:1"
+      },
+      "user": {
+        "slot": 0,
+        "shape": 0.0
+      }
+    }
+  },
+  "mixer": {
+    "vco1_level": 1023,
+    "vco2_level": 0,
+    "multi_level": 0
+  },
+  "filter": {
+    "cutoff": 1023,
+    "resonance": 0,
+    "drive": "0pct",
+    "keytrack": "0pct"
+  },
+  "envelopes": {
+    "amp_eg": {
+      "attack": 0,
+      "decay": 512,
+      "sustain": 1023,
+      "release": 30
+    },
+    "eg": {
+      "attack": 0,
+      "decay": 512,
+      "intensity": 0,
+      "target": "pitch"
+    }
+  },
+  "lfo": {
+    "wave": "triangle",
+    "mode": "normal",
+    "rate": 680,
+    "intensity": 0,
+    "target": "cutoff"
+  },
+  "effects": {
+    "modulation": {
+      "enabled": false,
+      "type": "chorus",
+      "time": 511,
+      "depth": 511
+    },
+    "delay": {
+      "enabled": false,
+      "time": 511,
+      "depth": 511,
+      "dry_wet": 511
+    },
+    "reverb": {
+      "enabled": false,
+      "time": 511,
+      "depth": 511,
+      "dry_wet": 511
+    }
+  },
+  "cv": {
+    "cv_in_mode": "modulation",
+    "cv_in_1": {
+      "assign": "pitch",
+      "range": 200
+    },
+    "cv_in_2": {
+      "assign": "cutoff",
+      "range": 0
+    }
+  },
+  "joystick": {
+    "plus": {
+      "assign": "pitch",
+      "range": 120
+    },
+    "minus": {
+      "assign": "cutoff",
+      "range": 10
+    }
+  },
+  "program": {
+    "level": 102,
+    "transpose": 13,
+    "micro_tuning": 0,
+    "scale_key": 12,
+    "program_tuning": 50
+  }
+}

@@ -3,6 +3,7 @@ using Azure;
 using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
+using ToneDruid.Api.Agents;
 using ToneDruid.Api.Models;
 using ToneDruid.Api.Options;
 using ToneDruid.Api.Services;
@@ -32,6 +33,8 @@ builder.Services.AddSingleton(sp =>
     return new OpenAIClient(new Uri(endpoint), credential);
 });
 
+builder.Services.AddSingleton<IVoiceParameterCatalog, VoiceParameterCatalog>();
+builder.Services.AddSingleton<PatchGenerationAgent>();
 builder.Services.AddScoped<PatchRequestRelayService>();
 
 builder.Services.AddCors(options =>
@@ -105,10 +108,31 @@ app.MapPost("/api/v1/patch-request", async (
     var requestId = Guid.NewGuid();
     context.Response.Headers["Request-Id"] = requestId.ToString();
 
+    var iterationHeader = context.Request.Headers.TryGetValue("x-iteration", out var iterationValue)
+        ? iterationValue.FirstOrDefault()
+        : null;
+    if (!string.Equals(iterationHeader, "002", StringComparison.Ordinal))
+    {
+        logger.LogWarning("Request {RequestId} missing expected iteration header. Value: {Iteration}", requestId, iterationHeader);
+    }
+
     try
     {
         var response = await relayService.RelayAsync(prompt, clientRequestId, requestId, cancellationToken);
         return Results.Ok(response);
+    }
+    catch (PatchSuggestionValidationException ex)
+    {
+        logger.LogWarning(ex, "Model output validation failed for RequestId {RequestId} and ClientRequestId {ClientRequestId}", requestId, clientRequestId);
+        return Results.Problem(
+            statusCode: StatusCodes.Status502BadGateway,
+            title: "Unable to interpret patch suggestion",
+            detail: "Unable to interpret patch suggestion. Please try again.",
+            extensions: new Dictionary<string, object?>
+            {
+                ["requestId"] = requestId.ToString(),
+                ["clientRequestId"] = clientRequestId
+            });
     }
     catch (RequestFailedException ex)
     {
